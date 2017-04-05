@@ -37,14 +37,25 @@ if (isset($_POST['btn-addProduct'])) {
     $productDate = strip_tags($productDate);
     $productDate = htmlspecialchars($productDate);
 
-    // if there's no error, continue to login
-    $query = "INSERT INTO product(productName, productCategory, productNumber, productPrice, productArriveDate) 
+
+    $check = mysqli_query($con, "SELECT * FROM product WHERE productName = '$productName' ");
+
+    if(mysqli_num_rows($check) > 0){
+
+        echo "<script type='text/javascript'>alert(' Товар уже имеется в магазине ');</script>";
+        header("Refresh:0");
+    }else{
+
+        // if there's no error, continue to login
+        $query = "INSERT INTO product(productName, productCategory, productNumber, productPrice, productArriveDate) 
               VALUES('$productName', '$productCategory', '$productNumber', '$productPrice', '$productDate')";
-    mysqli_query($con,"SET CHARSET cp1251");
-    $res = mysqli_query($con,$query);
-    $message = "Продукт добавлен!";
-    echo "<script type='text/javascript'>alert('$message');</script>";
-    header("Refresh:0");
+        mysqli_query($con,"SET CHARSET cp1251");
+        $res = mysqli_query($con,$query);
+        $message = "Продукт добавлен!";
+        echo "<script type='text/javascript'>alert('$message');</script>";
+        header("Refresh:0");
+    }
+
 }
 
 function getProductDescrByName($name)
