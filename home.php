@@ -1,37 +1,29 @@
 <?php
-/*
- * Главная страница
- *
- *
- *
- *
- * */
-
-
 ob_start();
 session_start();
-require_once 'dbconnect.php';
-
+$con=mysqli_connect('localhost','root','','shop');
 // if session is not set this will redirect to login page
 if (!isset($_SESSION['user'])) {
     header("Location: index.php");
     exit;
 }
-// select loggedin users detail
-//$res = mysql_query("SELECT * FROM reg WHERE id=" . $_SESSION['user']);
-//$userRow = mysql_fetch_array($res);
 
-
-if ( isset($_POST['btn-addProduct']) ) {
-
+if (isset($_POST['btn-addProduct'])) {
     // prevent sql injections/ clear user invalid inputs
-    $productName = trim($_POST['product_name']);
+
+    $productCategory = trim($_POST['product_category']);
+
+    $array = explode('-', $productCategory);
+    echo "<script>console.log( 'Debug Objects: " . $array[0] . "' );</script>";
+    $productCategory = $array[0];
+    $productName = $array[1];
+    $productCategory = strip_tags($productCategory);
+    $productCategory = htmlspecialchars($productCategory);
+
     $productName = strip_tags($productName);
     $productName = htmlspecialchars($productName);
 
-    $productCategory = trim($_POST['product_category']);
-    $productCategory = strip_tags($productCategory);
-    $productCategory = htmlspecialchars($productCategory);
+    print_r(explode('-', $productCategory));
 
     $productNumber = trim($_POST['product_number']);
     $productNumber = strip_tags($productNumber);
@@ -46,52 +38,50 @@ if ( isset($_POST['btn-addProduct']) ) {
     $productDate = htmlspecialchars($productDate);
 
     // if there's no error, continue to login
-    $query = "INSERT INTO product(productName, productCategory, productNumber, productPrice, productArriveDate) VALUES('$productName', '$productCategory', '$productNumber', '$productPrice', '$productDate')";
-    mysql_query("SET CHARSET cp1251");
-    $res = mysql_query($query);
+    $query = "INSERT INTO product(productName, productCategory, productNumber, productPrice, productArriveDate) 
+              VALUES('$productName', '$productCategory', '$productNumber', '$productPrice', '$productDate')";
+    mysqli_query($con,"SET CHARSET cp1251");
+    $res = mysqli_query($con,$query);
     $message = "Продукт добавлен!";
     echo "<script type='text/javascript'>alert('$message');</script>";
     header("Refresh:0");
-
 }
 
-
-
-function getProductDescrByName($name) {
-
-
+function getProductDescrByName($name)
+{
     $query = "
           SELECT * 
           FROM   product 
           WHERE  productName = '$name'
+          ORDER BY productArriveDate
     ";
-
-
-
     return $query;
+}
+
+
+function minusFromShop($name, $number)
+{
+    $take = "UPDATE product 
+              SET productNumber = '$number' 
+              WHERE productName = '$name' ";
+    return $take;
 }
 
 if (isset($_POST["action"])) {
     $action = $_POST["action"];
-
-
-    // todo query возвращает что-то даже если ничего нет
     $query = getProductDescrByName($action);
 
-
-
-    mysql_query("SET CHARSET cp1251");
-    $show = mysql_query($query);
-
-
-
-    // echo "<script type='text/javascript'>console.log('$action');</script>";
+    mysqli_query($con,"SET CHARSET cp1251");
+    $show = mysqli_query($con,$query);
 
     if (!$show) { // add this check.
-        die('Invalid query: ' . mysql_error());
+        die('Invalid query: ' . mysqli_error());
     } else {
-        while ($row = mysql_fetch_array($show, MYSQL_ASSOC)) {
+        $i = 0;
+        //print_r(mysql_num_rows($show));
+        while ($i < mysqli_num_rows($show)) {
 
+            $row = mysqli_fetch_array($show);
             $category = $row['productCategory'];
             $category = htmlspecialchars($row['productCategory'], ENT_QUOTES);
 
@@ -104,16 +94,74 @@ if (isset($_POST["action"])) {
             $date = $row['productArriveDate'];
             $date = htmlspecialchars($row['productArriveDate'], ENT_QUOTES);
 
-            print "<h2>". $number ."</h2>";
-            print "<h2>". $category ."</h2>";
-            print "<h2>". $price ."тг за шт.</h2>";
-            print "<h2>". $date ."</h2>";
-            exit();
+            print "<tr><td id='currentNumber'>" . $number . "</td>";
+            print "<td>" . $price . "</td>";
+            print "<td>" . $date . "</td></tr>";
+            $i++;
         }
+        exit();
     }
 }
 
+if (isset($_POST["number"])) {
+    $number = $_POST["number"];
+    $name = $_POST["name"];
+    $newNumber = $_POST["newNumber"];
+    $price = $_POST["price"];
+    print_r($name, $number);
+    $query = setDailySell($name, $number, $price);
+    $newNumber = $newNumber - $number;;
+    $take = minusFromShop($name, $newNumber);
+    mysqli_query($con,"SET CHARSET cp1251");
+    $show = mysqli_query($con,$query);
+    mysqli_query($con,"SET CHARSET cp1251");
+    $minus = mysqli_query($con,$take);
+}
 
+function setDailySell($name, $number, $price)
+{
+    date_default_timezone_set('Kazakhstan/Astana');
+    $date = date('Y-m-d', time());
+    $query = "
+          INSERT INTO dailyNumber(productName, productNumber, productPrice, productDate) 
+          VALUES ('$name','$number', '$price', '$date')
+    ";
+    return $query;
+}
+
+if (isset($_POST['addDailyStat'])) {
+    $query = "SELECT * FROM dailyNumber";
+
+    mysqli_query($con,"SET CHARSET cp1251");
+    $show = mysqli_query($con,$query);
+    $i = 0;
+    //print_r(mysql_num_rows($show));
+    while ($i < mysqli_num_rows($show)) {
+
+        $row = mysqli_fetch_array($show);
+        $name = $row['productName'];
+        $name = htmlspecialchars($row['productName'], ENT_QUOTES);
+
+        $category = $row['productCategory'];
+        $category = htmlspecialchars($row['productCategory'], ENT_QUOTES);
+
+        $number = $row['productNumber'];
+        $number = htmlspecialchars($row['productNumber'], ENT_QUOTES);
+
+        $price = $row['productPrice'];
+        $price = htmlspecialchars($row['productPrice'], ENT_QUOTES);
+
+        $date = $row['productDate'];
+        $date = htmlspecialchars($row['productDate'], ENT_QUOTES);
+
+        print "<tr><td>" . $name . "</td>";
+        print "<td id='currentNumberStat'>" . $number . "</td>";
+        print "<td>" . $price . "</td>";
+        print "<td>" . $date . "</td></tr>";
+        $i++;
+    }
+    exit();
+}
 
 ?>
 
@@ -167,15 +215,12 @@ if (isset($_POST["action"])) {
                             <h3> Добавить товар </h3></a>
                     </li>
                     <li>
-                        <a href="#tab_default_3" data-toggle="tab">
+                        <a href="#tab_default_3" data-toggle="tab" id="dailyStatistic">
                             <h3> Товары за день </h3></a>
                     </li>
                 </ul>
                 <div class="tab-content">
                     <div class="tab-pane active" id="tab_default_1">
-
-                        You are hovered over: <span class="hoveredOver"></span><br/>
-                        You have clicked on option: <span class="clickedOption"></span>
 
                         <br/><br/>
 
@@ -183,37 +228,35 @@ if (isset($_POST["action"])) {
 
                         <div id="dropdown" class="specialtyPlatesCategories">
 
-                            <div class="selectHeader">Категории продуктов</div>
+                            <div class="selectHeader">Категории товаров</div>
 
                             <!-- THIS IS WHERE YOU WILL PUT YOUR TOP-LEVEL OPTIONS -->
                             <div class="drop_down_scroll_container">
                                 <span>Напитки</span>
                                 <span>Фрукты</span>
                                 <span>Овощи</span>
-                                <span>Мясо</span>
-                                <span>Молочные продукты</span>
+                                <!--<span>Мясо</span>
+                                <span>Молочные продукты</span>-->
                             </div>
 
                             <!-- THIS IS WHERE YOU WILL PUT YOUR SUB-LEVEL OPTIONS -->
-                            <div id="Environment_subcategories" class="dropdown-subcategory">
-                                <span data-code="ENV01" data-image="" data-price="31.00">Pepsi</span>
-                                <span data-code="ENV02" data-image="" data-price="32.00">Fanta</span>
-                                <span data-code="ENV03" data-image="" data-price="33.00">Cola</span>
+                            <div class="dropdown-subcategory">
+                                <span>Pepsi</span>
+                                <span>Fanta</span>
+                                <span>Cola</span>
                             </div>
 
-                            <div id="Sports_subcategories" class="dropdown-subcategory">
-                                <span data-code="SPRT01" data-image="" data-price="34.00">Яблоки</span>
-                                <span data-code="SPRT02" data-image="" data-price="35.00">Бананы</span>
-                                <span data-code="SPRT03" data-image="" data-price="36.00">Апельсины</span>
+                            <div style="padding-top: 20px;" id="Sports_subcategories" class="dropdown-subcategory">
+                                <span>Яблоки</span>
+                                <span>Бананы</span>
+                                <span>Апельсины</span>
                             </div>
 
-                            <div id="Colleges_subcategories" class="dropdown-subcategory">
-                                <span data-code="COLL01" data-image="" data-price="37.00">Картофель</span>
-                                <span data-code="COLL02" data-image="" data-price="38.00">Лук</span>
-                                <span data-code="COLL03" data-image="" data-price="39.00">Морковь</span>
+                            <div style="padding-top: 40px;" id="Colleges_subcategories" class="dropdown-subcategory">
+                                <span>Картофель</span>
+                                <span>Лук</span>
+                                <span>Морковь</span>
                             </div>
-
-
                         </div>
 
 
@@ -226,15 +269,17 @@ if (isset($_POST["action"])) {
                                         <button type="button" class="close" data-dismiss="modal">
                                             <span aria-hidden="true">&times;</span><span class="sr-only">Close</span>
                                         </button>
-                                        <h4 class="modal-title" id="myModalLabel">Specialty Plate</h4>
+                                        <h4 class="modal-title" id="myModalLabel">Товар</h4>
                                     </div>
                                     <div class="modal-body">
                                         ...
                                     </div>
                                     <div class="modal-footer">
-                                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel
+                                        <button type="button" class="btn btn-default" data-dismiss="modal">Отмена
                                         </button>
-                                        <button type="button" class="btn btn-primary accept">Accept</button>
+                                        <button type="button" name="addDailyStat" class="btn btn-primary accept">
+                                            Принять
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -251,24 +296,24 @@ if (isset($_POST["action"])) {
                                       autocomplete="off">
                                     <div class="row">
                                         <div class="col-lg-12">
-                                            <div class="form-group">
-                                                <div class="input-group">
-                                                    <input type="text" name="product_name" class="form-control"
-                                                           placeholder="Название товара" required/>
-                                                    <span class="text-danger"><?php echo $nameError; ?></span>
-                                                </div>
-
-                                            </div>
 
                                             <div class="form-group">
                                                 <div class="input-group">
-                                                    <!--<input type="text" name="product_category" class="form-control"
-                                                           placeholder="Категория товара" required/>-->
                                                     <select name="product_category" required>
-                                                        <option value="">Выберите категорию</option>
-                                                        <option value="Фрукты">Фрукты</option>
-                                                        <option value="Овощи">Овощи</option>
-                                                        <option value="Напитки">Напитки</option>
+                                                        <option value="">Выберите товар</option>
+                                                        <optgroup label="Напитки">
+                                                            <option value="Напитки-Pepsi">Pepsi</option>
+                                                            <option value="Напитки-Cola">Cola</option>
+                                                            <option value="Напитки-Fanta">Fanta</option>
+                                                        </optgroup>
+                                                        <optgroup label="Фрукты">
+                                                            <option value="Фрукты-Яблоки">Яблоки</option>
+                                                            <option value="Фрукты-Груши">Груши</option>
+                                                        </optgroup>
+                                                        <optgroup label="Овощи">
+                                                            <option value="Овощи-Картофель">Картофель</option>
+                                                            <option value="Овощи-Лук">Лук</option>
+                                                        </optgroup>
                                                     </select>
                                                 </div>
                                                 <span class="text-danger"><?php echo $categoryError; ?></span>
@@ -276,7 +321,8 @@ if (isset($_POST["action"])) {
 
                                             <div class="form-group">
                                                 <div class="input-group">
-                                                    <input type="number" name="product_number" class="form-control"
+                                                    <input type="number" min="0" name="product_number"
+                                                           class="form-control"
                                                            placeholder="Количество товара" required/>
                                                 </div>
                                                 <span class="text-danger"><?php echo $numberError; ?></span>
@@ -284,8 +330,9 @@ if (isset($_POST["action"])) {
 
                                             <div class="form-group">
                                                 <div class="input-group">
-                                                    <input type="number" name="product_price" class="form-control"
-                                                           placeholder="Цена товара за 1 шт." required/>
+                                                    <input type="number" min="0" name="product_price"
+                                                           class="form-control"
+                                                           placeholder="Цена товара за 1 шт/кг" required/>
                                                 </div>
                                                 <span class="text-danger"><?php echo $priceError; ?></span>
                                             </div>
@@ -319,6 +366,9 @@ if (isset($_POST["action"])) {
                     <div class="tab-pane" id="tab_default_3">
                         <div class="form-style-3">
 
+                            <div id="divDailyStatistic">
+
+                            </div>
                         </div>
                     </div>
                 </div>

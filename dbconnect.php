@@ -1,21 +1,14 @@
 <?php
 
-	// this will avoid mysql_connect() deprecation error.
-	error_reporting( ~E_DEPRECATED & ~E_NOTICE );
-	// but I strongly suggest you to use PDO or MySQLi.
-	
-	define('DBHOST', 'localhost');
-	define('DBUSER', 'root');
-	define('DBPASS', '');
-	define('DBNAME', 'shop');
-	
-	$conn = mysql_connect(DBHOST,DBUSER,DBPASS);
-	$dbcon = mysql_select_db(DBNAME);
-	
-	if ( !$conn ) {
-		die("Connection failed : " . mysql_error());
-	}
-	
-	if ( !$dbcon ) {
-		die("Database Connection failed : " . mysql_error());
-	}
+$host_name = "localhost";
+$database = "shop"; // Change your database name
+$username = "root";          // Your database user id
+$password = "";          // Your password
+
+//////// Do not Edit below /////////
+try {
+    $dbo = new PDO('mysql:host='.$host_name.';dbname='.$database, $username, $password);
+} catch (PDOException $e) {
+    print "Error!: " . $e->getMessage() . "<br/>";
+    die();
+}
