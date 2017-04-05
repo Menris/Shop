@@ -6,8 +6,8 @@ A component of Metronic Theme - #1 Selling Bootstrap 3 Admin Theme in Themefores
 Licensed under MIT
 ***/
 #dropdown {
-	width:175px;
-	height:200px;
+	width:300px;
+	height:500px;
 	position:relative;
 }
 
@@ -28,6 +28,7 @@ Licensed under MIT
 	font-size:14px;
 	font-weight:400;
 	padding:0 2px;
+	height: 75px;
 }
 
 #dropdown span:hover {

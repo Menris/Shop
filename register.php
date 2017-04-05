@@ -5,7 +5,7 @@ if (isset($_SESSION['user']) != "") {
     header("Location: home.php");
 }
 include_once 'dbconnect.php';
-
+$con=mysqli_connect('localhost','root','','shop');
 $error = false;
 
 if (isset($_POST['btn-signup'])) {
@@ -65,7 +65,7 @@ if (isset($_POST['btn-signup'])) {
     if (!$error) {
 
         $query = "INSERT INTO reg(login,password) VALUES('$name','$password')";
-        $res = mysql_query($query);
+        $res = mysqli_query($con, $query);
 
         if ($res) {
             $errTyp = "success";

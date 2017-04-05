@@ -2,6 +2,8 @@
 ob_start();
 session_start();
 require_once 'dbconnect.php';
+$con=mysqli_connect('localhost','root','','shop');
+
 
 // it will never let you open index(login) page if session is set
 if (isset($_SESSION['user']) != "") {
@@ -41,10 +43,9 @@ if (isset($_POST['btn-login'])) {
 
         $password = hash('sha256', $pass); // password hashing using SHA256
 
-        $res = mysql_query("SELECT id, login, password FROM reg WHERE login='$email'");
-        echo("<script> console.log('PHP: " . mysql_query("SELECT id, login, password FROM reg WHERE login='$email'") . "') </script>");
-        $row = mysql_fetch_array($res);
-        $count = mysql_num_rows($res); // if uname/pass correct it returns must be 1 row
+        $res = mysqli_query($con,"SELECT id, login, password FROM reg WHERE login='$email'");
+        $row = mysqli_fetch_array($res);
+        $count = mysqli_num_rows($res); // if uname/pass correct it returns must be 1 row
 
         if ($count == 1 && $row['password'] == $password) {
             $_SESSION['user'] = $row['id'];
@@ -99,9 +100,9 @@ if (isset($_POST['btn-login'])) {
                         <div class="input-group">
                             <span class="input-group-addon"><span class="glyphicon glyphicon-envelope"></span></span>
                             <input type="text" name="email" class="form-control" placeholder="Your Email"
-                                   value="<?php echo $email; ?>" maxlength="40"/>
+                                   " maxlength="40"/>
                         </div>
-                        <span class="text-danger"><?php echo $emailError; ?></span>
+                        <span class="text-danger"></span>
                     </div>
 
                     <div class="form-group">
@@ -110,7 +111,7 @@ if (isset($_POST['btn-login'])) {
                             <input type="password" name="pass" class="form-control" placeholder="Your Password"
                                    maxlength="15"/>
                         </div>
-                        <span class="text-danger"><?php echo $passError; ?></span>
+                        <span class="text-danger"></span>
                     </div>
 
                     <div class="form-group">
