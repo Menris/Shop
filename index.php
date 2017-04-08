@@ -1,7 +1,6 @@
 <?php
 ob_start();
 session_start();
-require_once 'dbconnect.php';
 $con=mysqli_connect('localhost','root','','shop');
 
 
